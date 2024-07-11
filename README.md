@@ -1,1 +1,3 @@
-# MosquitoKiller
+# Mosquito Killer
+
+by Lucie Leroty
