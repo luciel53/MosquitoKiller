@@ -113,7 +113,7 @@ function App() {
     <div className="flex flex-col h-full w-full">
       {!isGameStarted && (
         <>
-          <img src={mosquito} className="w-60 z-0 mt-40 -ml-4 absolute rounded-full"></img>
+          <img src={mosquito} className="w-60 z-0 mt-40 -ml-4 absolute rounded-full animate-fade-right"></img>
           <h1 className="title text-center text-9xl z-20  mb-6 text-orange-700 animate-rotate-x">
             Mosquito Killer
           </h1>
