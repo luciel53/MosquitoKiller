@@ -2,26 +2,31 @@ import React, { useState, useEffect, useRef } from "react";
 import Start from "./components/Start";
 import "./App.css";
 import mosquito from "./cute-mosquito-cartoon-character-flying/vvxs_w2ro_230518.jpg";
+import win from "./images/win.svg";
 
 function App() {
   const [targets, setTargets] = useState([]);
   const [score, setScore] = useState(0);
   const [intervalDelay, setIntervalDelay] = useState(1000); // Initial delay of 1 sec
   const [timeElapsed, setTimeElapsed] = useState(0); // state for the chronometer
-  const [isGameStarted, setIsGameStarted] = useState(false); // state for game start
-  const [missedTargets, setMissedTargets] = useState(0); // state for missed targets
+  const [isGameStarted, setIsGameStarted] = useState(false);
+  const [missedTargets, setMissedTargets] = useState(0);
+  const [gameOver, setGameOver] = useState(false);
   const gameAreaRef = useRef(null);
   const intervalId = useRef(null); // to store the interval id
+  const timerIntervalId = useRef(null); // to store the timer interval id
 
   const targetLimit = 5; // Limit for missed targets
 
   const spawnTarget = () => {
-    const newTarget = {
-      id: Date.now(),
-      x: Math.random() * (gameAreaRef.current.offsetWidth - 50),
-      y: Math.random() * (gameAreaRef.current.offsetHeight - 50),
-    };
-    setTargets((prevTargets) => [...prevTargets, newTarget]);
+    if (gameAreaRef.current) {
+      const newTarget = {
+        id: Date.now(),
+        x: Math.random() * (gameAreaRef.current.offsetWidth - 50),
+        y: Math.random() * (gameAreaRef.current.offsetHeight - 50),
+      };
+      setTargets((prevTargets) => [...prevTargets, newTarget]);
+    }
   };
 
   const handleTargetClick = (id, event) => {
@@ -33,7 +38,9 @@ function App() {
   };
 
   const handleGameAreaClick = () => {
-    setMissedTargets((prevMissed) => prevMissed + 1);
+    if (!gameOver) {
+      setMissedTargets((prevMissed) => prevMissed + 1);
+    }
   };
 
   // Check if a target is missed
@@ -49,7 +56,7 @@ function App() {
     }
   }, [targets, isGameStarted, intervalDelay]);
 
-  // effect to manage the interval to generate new targets
+  // Effect to manage the interval to generate new targets
   useEffect(() => {
     if (isGameStarted && intervalId.current) {
       clearInterval(intervalId.current);
@@ -61,10 +68,10 @@ function App() {
     return () => clearInterval(intervalId.current); // clean up!
   }, [intervalDelay, isGameStarted]);
 
-  // effect to increase the speed every 30 sec
+  // Effect to increase the speed every 30 sec
   useEffect(() => {
     const increaseSpeed = () => {
-      setIntervalDelay((prevDelay) => Math.max(200, prevDelay - 100)); // Reduce the interval of 100ms til 200ms
+      setIntervalDelay((prevDelay) => Math.max(200, prevDelay - 100)); // Reduce the interval by 100ms until 200ms
     };
 
     if (isGameStarted) {
@@ -76,11 +83,11 @@ function App() {
   // Effects to update chronometer every sec
   useEffect(() => {
     if (isGameStarted) {
-      const timerInterval = setInterval(() => {
+      timerIntervalId.current = setInterval(() => {
         setTimeElapsed((prevTime) => prevTime + 1);
       }, 1000);
 
-      return () => clearInterval(timerInterval);
+      return () => clearInterval(timerIntervalId.current);
     }
   }, [isGameStarted]);
 
@@ -96,11 +103,13 @@ function App() {
     setTimeElapsed(0);
     setTargets([]);
     setMissedTargets(0);
+    setGameOver(false);
   };
 
   const handleGameOver = () => {
+    setGameOver(true);
     setIsGameStarted(false);
-    alert("Game Over!");
+    clearInterval(timerIntervalId.current); // Stop the timer
   };
 
   useEffect(() => {
@@ -111,22 +120,30 @@ function App() {
 
   return (
     <div className="flex flex-col h-full w-full">
-      {!isGameStarted && (
+      {!isGameStarted && !gameOver && (
         <>
-          <img src={mosquito} className="w-60 z-0 mt-40 -ml-4 absolute rounded-full animate-fade-right"></img>
+          <img
+            src={mosquito}
+            className="w-60 z-0 mt-40 -ml-4 absolute rounded-full animate-fade-right"
+          ></img>
           <h1 className="title text-center text-9xl z-20  mb-6 text-orange-700 animate-rotate-x">
             Mosquito Killer
           </h1>
           <Start onStart={handleGameStart} />
         </>
       )}
-      {isGameStarted && (
-        <>
-          <h1 className="title text-5xl text-center mb-6 text-orange-700 animate-rotate-x">
-            Mosquito Killer
-          </h1>
+      {isGameStarted && !gameOver && (
+        <div className="flex flex-col">
+          <div className="flex flex-row justify-between">
+            <h1 className="title text-5xl text-center ml-[500px] mb-6 text-orange-700 animate-rotate-x">
+              Mosquito Killer
+            </h1>
+            <div className="-mr-36">
+              <img src={win} alt="classement" className="w-10"></img>
+            </div>
+          </div>
           <div
-            className="bg-slate-50 w-[1400px] h-[700px] rounded-2xl bg-opacity-90 relative animate-fade animate-duration-1000 animate-ease-in"
+            className="bg-slate-50 w-[1400px] h-[700px] rounded-2xl bg-opacity-90 relative animate-fade animate-delay-[500ms] animate-duration-1000 animate-ease-in"
             ref={gameAreaRef}
             onClick={handleGameAreaClick} // Add click handler here
           >
@@ -148,7 +165,45 @@ function App() {
               Missed Targets: {missedTargets}/{targetLimit}
             </div>
           </div>
-        </>
+        </div>
+      )}
+      {gameOver && (
+        <div className="flex flex-col">
+          <div className="flex flex-row justify-between">
+            <h1 className="title text-5xl text-center ml-[500px] mb-6 text-orange-700 animate-rotate-x">
+              Mosquito Killer
+            </h1>
+            <div className="-mr-36">
+              <img src={win} alt="classement" className="w-10"></img>
+            </div>
+          </div>
+          <div
+            className="flex flex-row justify-center items-center bg-slate-50 w-[1400px] h-[700px] rounded-2xl bg-opacity-90 relative animate-fade animate-delay-[500ms] animate-duration-1000 animate-ease-in"
+            ref={gameAreaRef}
+          >
+            <div className="flex flex-col items-center">
+              <p className="font-bloodlust text-orange-700 text-9xl">GAME OVER</p>
+              <p className="text-2xl">
+                Vous avez tué <span className="text-red-500">{score}</span>{" "}
+                moustiques!
+              </p>
+              <p className="text-2xl">
+                En <span className="text-red-500">{formatTime(timeElapsed)}</span>{" "}
+              </p>
+              <p className="text-2xl">
+                Vous avez manqué votre cible <span className="text-red-500">{missedTargets}</span>{" "}
+                fois.
+              </p>
+            </div>
+          </div>
+          <div className="game-info text-center">
+            <div className="score">Score: {score}</div>
+            <div className="timer">Temps écoulé: {formatTime(timeElapsed)}</div>
+            <div className="missed-targets">
+              Missed Targets: {missedTargets}/{targetLimit}
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
