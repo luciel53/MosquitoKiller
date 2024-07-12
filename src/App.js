@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import Start from "./components/Start";
 import "./App.css";
 import mosquito from "./cute-mosquito-cartoon-character-flying/vvxs_w2ro_230518.jpg";
-import win from "./images/win.svg";
+import trophy from "./images/trophy.svg";
 
 function App() {
   const [targets, setTargets] = useState([]);
@@ -139,7 +139,7 @@ function App() {
               Mosquito Killer
             </h1>
             <div className="-mr-36">
-              <img src={win} alt="classement" className="w-10"></img>
+              <img src={trophy} alt="classement" className="w-10"></img>
             </div>
           </div>
           <div
@@ -174,7 +174,7 @@ function App() {
               Mosquito Killer
             </h1>
             <div className="-mr-36">
-              <img src={win} alt="classement" className="w-10"></img>
+              <img src={trophy} alt="classement" className="w-12"></img>
             </div>
           </div>
           <div
