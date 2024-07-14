@@ -3,6 +3,7 @@ import Start from "./components/Start";
 import "./App.css";
 import mosquito from "./cute-mosquito-cartoon-character-flying/vvxs_w2ro_230518.jpg";
 import trophy from "./images/trophy.svg";
+import restart from "./images/restart.svg";
 
 function App() {
   const [targets, setTargets] = useState([]);
@@ -112,6 +113,16 @@ function App() {
     clearInterval(timerIntervalId.current); // Stop the timer
   };
 
+  const handleRestart = () => {
+    setScore(0);
+    setTimeElapsed(0);
+    setTargets([]);
+    setMissedTargets(0);
+    setGameOver(false);
+    setIsGameStarted(true);
+    setIntervalDelay(1000); // Reset the interval delay to the initial value
+  };
+
   useEffect(() => {
     if (missedTargets >= targetLimit) {
       handleGameOver();
@@ -174,7 +185,7 @@ function App() {
               Mosquito Killer
             </h1>
             <div className="-mr-36">
-              <img src={trophy} alt="classement" className="w-12"></img>
+              <img src={trophy} alt="classement" className="w-12 cursor-pointer hover:opacity-85 hover:transition-opacity"></img>
             </div>
           </div>
           <div
@@ -184,16 +195,20 @@ function App() {
             <div className="flex flex-col items-center">
               <p className="font-bloodlust text-orange-700 text-9xl">GAME OVER</p>
               <p className="text-2xl">
-                Vous avez tué <span className="text-red-500">{score}</span>{" "}
-                moustiques!
+                Vous avez tué <span className="text-red-500">{score}</span> moustiques!
               </p>
               <p className="text-2xl">
-                En <span className="text-red-500">{formatTime(timeElapsed)}</span>{" "}
+                En <span className="text-red-500">{formatTime(timeElapsed)}</span>
               </p>
               <p className="text-2xl">
-                Vous avez manqué votre cible <span className="text-red-500">{missedTargets}</span>{" "}
-                fois.
+                Vous avez manqué votre cible <span className="text-red-500">{missedTargets}</span> fois.
               </p>
+              <img
+                src={restart}
+                alt="Rejouer"
+                className="w-20 mt-10 animate-jump-in cursor-pointer hover:opacity-85 hover:transition-opacity"
+                onClick={handleRestart}
+              />
             </div>
           </div>
           <div className="game-info text-center">
