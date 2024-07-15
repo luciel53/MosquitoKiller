@@ -9,10 +9,12 @@ function App() {
   const [targets, setTargets] = useState([]);
   const [score, setScore] = useState(0);
   const [intervalDelay, setIntervalDelay] = useState(1000); // Initial delay of 1 sec
-  const [timeElapsed, setTimeElapsed] = useState(0); // state for the chronometer
+  const [time, setTime] = useState(0); // state for the chronometer
   const [isGameStarted, setIsGameStarted] = useState(false);
   const [missedTargets, setMissedTargets] = useState(0);
   const [gameOver, setGameOver] = useState(false);
+  const [username, setUsername] = useState("");
+  const [displayForm, setDisplayForm] = useState(true);
   const gameAreaRef = useRef(null);
   const intervalId = useRef(null); // to store the interval id
   const timerIntervalId = useRef(null); // to store the timer interval id
@@ -85,7 +87,7 @@ function App() {
   useEffect(() => {
     if (isGameStarted) {
       timerIntervalId.current = setInterval(() => {
-        setTimeElapsed((prevTime) => prevTime + 1);
+        setTime((prevTime) => prevTime + 1);
       }, 1000);
 
       return () => clearInterval(timerIntervalId.current);
@@ -98,24 +100,27 @@ function App() {
     return `${minutes}:${secs < 10 ? "0" : ""}${secs}`;
   };
 
+  // Start the game
   const handleGameStart = () => {
     setIsGameStarted(true);
     setScore(0);
-    setTimeElapsed(0);
+    setTime(0);
     setTargets([]);
     setMissedTargets(0);
     setGameOver(false);
   };
 
+  // turn to game over
   const handleGameOver = () => {
     setGameOver(true);
     setIsGameStarted(false);
     clearInterval(timerIntervalId.current); // Stop the timer
   };
 
+  // To restart when click on restart button
   const handleRestart = () => {
     setScore(0);
-    setTimeElapsed(0);
+    setTime(0);
     setTargets([]);
     setMissedTargets(0);
     setGameOver(false);
@@ -129,30 +134,75 @@ function App() {
     }
   }, [missedTargets]);
 
+  // Retrieve the value of the username
+  const handleUsernameChange = (event) => {
+    setUsername(event.target.value);
+  };
+
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    if (username.trim() === "") {
+      alert("S'il te plaît entre ton nom.");
+      return;
+    }
+
+    try {
+      await fetch("http://localhost:5000/api/results", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          username,
+          score,
+          time,
+        }),
+      });
+      setUsername("");
+      setDisplayForm(false);
+      console.log("Congratulations! You have successfully posted your score!");
+    } catch (error) {
+      console.error("Error submitting the score and username:", error);
+      alert("Impossible de poster le score.");
+    }
+  };
+
+  
+
   return (
     <div className="flex flex-col h-full w-full">
+      {/* Homepage (Game not started) */}
       {!isGameStarted && !gameOver && (
         <>
+          {/* Mosquito image */}
           <img
             src={mosquito}
+            alt="moustique"
             className="w-60 z-0 mt-40 -ml-4 absolute rounded-full animate-fade-right"
           ></img>
+          {/* Title */}
           <h1 className="title text-center text-9xl z-20  mb-6 text-orange-700 animate-rotate-x">
             Mosquito Killer
           </h1>
+          {/* Start Button */}
           <Start onStart={handleGameStart} />
         </>
       )}
+      {/* Game is started and NOT Game over */}
       {isGameStarted && !gameOver && (
         <div className="flex flex-col">
-          <div className="flex flex-row justify-between">
+          {/* header */}
+          <header className="flex flex-row justify-between">
+            {/* Title */}
             <h1 className="title text-5xl text-center ml-[500px] mb-6 text-orange-700 animate-rotate-x">
               Mosquito Killer
             </h1>
+            {/* Leaderboard */}
             <div className="-mr-36">
               <img src={trophy} alt="classement" className="w-10"></img>
             </div>
-          </div>
+          </header>
+          {/* Game area: on click */}
           <div
             className="bg-slate-50 w-[1400px] h-[700px] rounded-2xl bg-opacity-90 relative animate-fade animate-delay-[500ms] animate-duration-1000 animate-ease-in"
             ref={gameAreaRef}
@@ -171,38 +221,79 @@ function App() {
           </div>
           <div className="game-info text-center">
             <div className="score">Score: {score}</div>
-            <div className="timer">Temps écoulé: {formatTime(timeElapsed)}</div>
+            <div className="timer">Temps écoulé: {formatTime(time)}</div>
             <div className="missed-targets">
               Missed Targets: {missedTargets}/{targetLimit}
             </div>
           </div>
         </div>
       )}
+      {/* When Game over */}
       {gameOver && (
         <div className="flex flex-col">
           <div className="flex flex-row justify-between">
+            {/* Title */}
             <h1 className="title text-5xl text-center ml-[500px] mb-6 text-orange-700 animate-rotate-x">
               Mosquito Killer
             </h1>
+            {/* Leaderboard */}
             <div className="-mr-36">
-              <img src={trophy} alt="classement" className="w-12 cursor-pointer hover:opacity-85 hover:transition-opacity"></img>
+              <img
+                src={trophy}
+                alt="classement"
+                className="w-12 cursor-pointer hover:opacity-85 hover:transition-opacity"
+              ></img>
             </div>
           </div>
+          {/* Game area */}
           <div
             className="flex flex-row justify-center items-center bg-slate-50 w-[1400px] h-[700px] rounded-2xl bg-opacity-90 relative animate-fade animate-delay-[500ms] animate-duration-1000 animate-ease-in"
             ref={gameAreaRef}
           >
             <div className="flex flex-col items-center">
-              <p className="font-bloodlust text-orange-700 text-9xl">GAME OVER</p>
-              <p className="text-2xl">
-                Vous avez tué <span className="text-red-500">{score}</span> moustiques!
+              {/* Game over title */}
+              <p className="font-bloodlust text-orange-700 text-9xl">
+                GAME OVER
               </p>
+              {/* Score (Number of mosquitoes killed) */}
               <p className="text-2xl">
-                En <span className="text-red-500">{formatTime(timeElapsed)}</span>
+                Vous avez tué <span className="text-red-500">{score}</span>{" "}
+                moustiques!
               </p>
+              {/* Time */}
               <p className="text-2xl">
-                Vous avez manqué votre cible <span className="text-red-500">{missedTargets}</span> fois.
+                En <span className="text-red-500">{formatTime(time)}</span>
               </p>
+              {/* Failed attempts */}
+              <p className="text-2xl">
+                Vous avez manqué votre cible{" "}
+                <span className="text-red-500">{missedTargets}</span> fois.
+              </p>
+              {/* To register the username in the leaderboard */}
+              {displayForm && (
+                <form
+                  onSubmit={handleSubmit}
+                  className="animate-jump-in animate-duration-[1000ms] animate-delay-[1000ms]"
+                >
+                  {/* Enter the username */}
+                  <input
+                    type="text"
+                    value={username}
+                    onChange={handleUsernameChange}
+                    placeholder="Entre ton nom"
+                    className="h-12 w-60 mt-10 mr-2 border-2 text-center rounded-full border-red-500"
+                  ></input>
+                  {/* Button to validate the username */}
+                  <button
+                    type="submit"
+                    value="Valider"
+                    className="p-3 border-2 rounded-full bg-red-500 text-white hover:border-2 hover:border-red-500 hover:bg-slate-50 hover:text-red-500"
+                  >
+                    OK
+                  </button>
+                </form>
+              )}
+              {/* Restart button */}
               <img
                 src={restart}
                 alt="Rejouer"
@@ -211,9 +302,10 @@ function App() {
               />
             </div>
           </div>
+          {/* Game informations */}
           <div className="game-info text-center">
             <div className="score">Score: {score}</div>
-            <div className="timer">Temps écoulé: {formatTime(timeElapsed)}</div>
+            <div className="timer">Temps écoulé: {formatTime(time)}</div>
             <div className="missed-targets">
               Missed Targets: {missedTargets}/{targetLimit}
             </div>

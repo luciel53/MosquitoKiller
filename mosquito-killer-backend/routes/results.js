@@ -11,6 +11,7 @@ router.post("/", async (req, res) => {
     await newResult.save();
     // Convert the result in json format
     res.status(201).json(newResult);
+    console.log("posted!");
   } catch (error) {
     res.status(500).json({ message: "Error saving the result", error });
   }
