@@ -53,11 +53,6 @@ body {
   cursor: pointer;
 }
 
-.score {
-  margin-top: 20px;
-  font-size: 24px;
-}
-
 .non-selectable {
   -webkit-user-select: none; /* Safari */
   -moz-user-select: none; /* Firefox */

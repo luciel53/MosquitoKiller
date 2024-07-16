@@ -27,7 +27,10 @@ function App() {
   // Function to handle clicks outside the leaderboard to close it
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (leaderboardRef.current && !leaderboardRef.current.contains(event.target)) {
+      if (
+        leaderboardRef.current &&
+        !leaderboardRef.current.contains(event.target)
+      ) {
         setIsDropdownVisible(false);
       }
     };
@@ -250,13 +253,9 @@ function App() {
           {/* header */}
           <header className="flex flex-row justify-between">
             {/* Title */}
-            <h1 className="title text-5xl text-center ml-[500px] mb-6 text-orange-700 animate-rotate-x">
+            <h1 className="title text-5xl text-center ml-[500px] mt-5 mb-6 pb-1 text-orange-700 animate-rotate-x">
               Mosquito Killer
             </h1>
-            {/* Leaderboard */}
-            <div className="-mr-36">
-              <img src={trophy} alt="Leaderboard" className="w-10"></img>
-            </div>
           </header>
           {/* Game area: on click */}
           <div
@@ -269,18 +268,25 @@ function App() {
                 key={target.id}
                 src={mosquito}
                 alt={target.id}
-                className="target non-selectable animate-jump-out animate-once animate-duration-[2000ms] animate-delay-[3000ms] animate-ease-out"
+                className="target non-selectable"
                 style={{ left: target.x, top: target.y }}
                 onClick={(event) => handleTargetClick(target.id, event)}
               />
             ))}
           </div>
           {/* Game info */}
-          <div className="game-info text-center">
-            <div className="score">Score: {score}</div>
-            <div className="timer">Temps: {formatTime(time)}</div>
-            <div className="missed-targets">
-              Cibles manquées: {missedTargets}/{targetLimit}
+          <div className=" flex flex-col game-info text-center font-futura">
+            <div className="flex flex-row justify-between px-4 font-semibold">
+              <div className="score">Score: {score}</div>
+              <div className="timer">Temps: {formatTime(time)}</div>
+              <div className="missed-targets">
+                Cibles manquées: {missedTargets}/{targetLimit}
+              </div>
+            </div>
+            <div className="mt-16 pb-1">
+              <p>Créé par <a href="https://luciel53.github.io/">Lucie Leroty</a> -
+              Développeuse Web Full Stack
+              </p>
             </div>
           </div>
         </div>
@@ -288,13 +294,16 @@ function App() {
       {/* Game over */}
       {gameOver && (
         <div className="flex flex-col">
-          <header className="flex flex-row justify-between">
+          <header className="flex flex-row justify-between mt-6">
             {/* Title */}
             <h1 className="title text-5xl text-center ml-[500px] mb-6 text-orange-700 animate-rotate-x">
               Mosquito Killer
             </h1>
             {/* Leaderboard */}
-            <div className="-mr-36 relative z-20 font-futura" ref={leaderboardRef}>
+            <div
+              className="-mr-36 relative z-20 font-futura"
+              ref={leaderboardRef}
+            >
               <img
                 src={trophy}
                 alt="Leaderboard"
@@ -302,8 +311,10 @@ function App() {
                 className="w-14 -mt-2 cursor-pointer hover:opacity-85 hover:transition-opacity"
               />
               {isDropdownVisible && (
-                <div className="flex flex-col items-center absolute right-0 mt-0 w-[980px] h-auto pt-10 pb-2 bg-winner bg-cover bg-no-repeat rounded-2xl shadow-lg z-20 text-2xl animate-fade-down border-4 border-yellow-500">
-                  <h2 className="text-3xl -mt-7 mb-4 z-20 animate-pulse">Top 15</h2>
+                <div className="flex flex-col items-center absolute right-0 -mt-1 w-[980px] h-auto pt-10 pb-2 bg-winner bg-cover bg-no-repeat rounded-2xl shadow-lg z-20 text-2xl animate-fade-down border-4 border-yellow-500">
+                  <h2 className="text-3xl -mt-7 mb-4 z-20 animate-pulse">
+                    Top 15
+                  </h2>
                   <div className="absolute inset-0 bg-slate-50 bg-opacity-70 rounded-2xl"></div>
                   <table className="z-10 w-full text-center">
                     <thead>
@@ -315,23 +326,32 @@ function App() {
                       </tr>
                     </thead>
                     <tbody>
-                    {leaderboard.map((result, index) => (
-  <tr
-    key={result.username + index}
-    className={`${
-      newRecord && newRecord.username === result.username && newRecord.score === result.score && newRecord.time === result.time
-        ? 'bg-yellow-300 font-bold'
-        : ''
-    }`}
-  >
-    <td className={`py-2 px-4 ${index + 1 < 4 ? 'text-yellow-500 font-bold' : ''}`}>
-      {index + 1}
-    </td>
-    <td className="py-2 px-4">{result.username}</td>
-    <td className="py-2 px-4">{result.score}</td>
-    <td className="py-2 px-4">{formatTime(result.time)}</td>
-  </tr>
-))}
+                      {leaderboard.map((result, index) => (
+                        <tr
+                          key={result.username + index}
+                          className={`${
+                            newRecord &&
+                            newRecord.username === result.username &&
+                            newRecord.score === result.score &&
+                            newRecord.time === result.time
+                              ? "bg-yellow-300 font-bold"
+                              : ""
+                          }`}
+                        >
+                          <td
+                            className={`py-2 px-4 ${
+                              index + 1 < 4 ? "text-yellow-500 font-bold" : ""
+                            }`}
+                          >
+                            {index + 1}
+                          </td>
+                          <td className="py-2 px-4">{result.username}</td>
+                          <td className="py-2 px-4">{result.score}</td>
+                          <td className="py-2 px-4">
+                            {formatTime(result.time)}
+                          </td>
+                        </tr>
+                      ))}
                     </tbody>
                   </table>
                 </div>
@@ -397,10 +417,16 @@ function App() {
           </div>
           {/* Game info */}
           <div className="game-info text-center font-futura">
-            <div className="score">Score: {score}</div>
-            <div className="timer">Elapsed Time: {formatTime(time)}</div>
-            <div className="missed-targets">
-              Missed Targets: {missedTargets}/{targetLimit}
+            <div className="flex flex-row justify-between px-4 font-semibold">
+              <div className="score">Score: {score}</div>
+              <div className="timer">Temps: {formatTime(time)}</div>
+              <div className="missed-targets">
+                Cibles manquées: {missedTargets}/{targetLimit}
+              </div>
+            </div>
+            <div className="mt-16 pb-1">
+              Créé par <a href="https://luciel53.github.io/">Lucie Leroty</a> -
+              Développeuse Web Full Stack
             </div>
           </div>
         </div>
