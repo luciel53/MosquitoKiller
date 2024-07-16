@@ -17,6 +17,13 @@
   font-style: normal;
 }
 
+@font-face {
+  font-family: 'futurahandwritten';
+  src: url('./fonts/futurahandwritten/FuturaHandwritten.ttf');
+  font-weight: normal;
+  font-style: normal;
+}
+
 body {
   margin: 0;
   display: flex;

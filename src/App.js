@@ -14,12 +14,30 @@ function App() {
   const [missedTargets, setMissedTargets] = useState(0);
   const [gameOver, setGameOver] = useState(false);
   const [username, setUsername] = useState("");
-  const [displayForm, setDisplayForm] = useState(true);
+  const [displayForm, setDisplayForm] = useState(false); // Initially false
+  const [leaderboard, setLeaderboard] = useState([]);
+  const [isDropdownVisible, setIsDropdownVisible] = useState(false);
+  const [newRecord, setNewRecord] = useState(null);
   const gameAreaRef = useRef(null);
-  const intervalId = useRef(null); // to store the interval id
-  const timerIntervalId = useRef(null); // to store the timer interval id
+  const leaderboardRef = useRef(null); // Ref for the leaderboard element
+  const intervalId = useRef(null); // Ref for interval ID
 
   const targetLimit = 5; // Limit for missed targets
+
+  // Function to handle clicks outside the leaderboard to close it
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (leaderboardRef.current && !leaderboardRef.current.contains(event.target)) {
+        setIsDropdownVisible(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
 
   const spawnTarget = () => {
     if (gameAreaRef.current) {
@@ -86,11 +104,11 @@ function App() {
   // Effects to update chronometer every sec
   useEffect(() => {
     if (isGameStarted) {
-      timerIntervalId.current = setInterval(() => {
+      const timerIntervalId = setInterval(() => {
         setTime((prevTime) => prevTime + 1);
       }, 1000);
 
-      return () => clearInterval(timerIntervalId.current);
+      return () => clearInterval(timerIntervalId);
     }
   }, [isGameStarted]);
 
@@ -108,13 +126,27 @@ function App() {
     setTargets([]);
     setMissedTargets(0);
     setGameOver(false);
+    setDisplayForm(false); // Reset display form state
   };
 
   // turn to game over
   const handleGameOver = () => {
     setGameOver(true);
     setIsGameStarted(false);
-    clearInterval(timerIntervalId.current); // Stop the timer
+    clearInterval(intervalId.current); // Stop the interval
+
+    // Check if the player's score qualifies for the top 15
+    const currentLeaderboard = [...leaderboard, { username, score, time }];
+    currentLeaderboard.sort((a, b) => b.score - a.score);
+    const playerRank = currentLeaderboard.findIndex(
+      (entry) => entry.username === username && entry.score === score
+    );
+
+    if (playerRank < 15) {
+      setDisplayForm(true);
+    } else {
+      setDisplayForm(false);
+    }
   };
 
   // To restart when click on restart button
@@ -126,6 +158,7 @@ function App() {
     setGameOver(false);
     setIsGameStarted(true);
     setIntervalDelay(1000); // Reset the interval delay to the initial value
+    setDisplayForm(false); // Reset display form state
   };
 
   useEffect(() => {
@@ -139,10 +172,23 @@ function App() {
     setUsername(event.target.value);
   };
 
+  const fetchLeaderboard = async () => {
+    try {
+      const response = await fetch("http://localhost:5000/api/results");
+      if (!response.ok) {
+        throw new Error("Failed to fetch leaderboard");
+      }
+      const data = await response.json();
+      setLeaderboard(data);
+    } catch (error) {
+      console.error("Error fetching the leaderboard:", error);
+    }
+  };
+
   const handleSubmit = async (event) => {
     event.preventDefault();
     if (username.trim() === "") {
-      alert("S'il te plaît entre ton nom.");
+      alert("Please enter your name.");
       return;
     }
 
@@ -160,14 +206,24 @@ function App() {
       });
       setUsername("");
       setDisplayForm(false);
+      await fetchLeaderboard();
+      setNewRecord({ username, score, time }); // Set newRecord with username and score
       console.log("Congratulations! You have successfully posted your score!");
+      setIsDropdownVisible(true);
     } catch (error) {
       console.error("Error submitting the score and username:", error);
-      alert("Impossible de poster le score.");
+      alert("Failed to post the score.");
     }
   };
 
-  
+  useEffect(() => {
+    fetchLeaderboard();
+  }, []); // Ensure leaderboard is fetched only once on component mount
+
+  // toggle the state of the dropdown leaderboard
+  const toggleDropdown = () => {
+    setIsDropdownVisible(!isDropdownVisible);
+  };
 
   return (
     <div className="flex flex-col h-full w-full">
@@ -177,11 +233,11 @@ function App() {
           {/* Mosquito image */}
           <img
             src={mosquito}
-            alt="moustique"
+            alt="Mosquito"
             className="w-60 z-0 mt-40 -ml-4 absolute rounded-full animate-fade-right"
           ></img>
           {/* Title */}
-          <h1 className="title text-center text-9xl z-20  mb-6 text-orange-700 animate-rotate-x">
+          <h1 className="title text-center text-9xl z-20 mb-6 text-orange-700 animate-rotate-x">
             Mosquito Killer
           </h1>
           {/* Start Button */}
@@ -199,7 +255,7 @@ function App() {
             </h1>
             {/* Leaderboard */}
             <div className="-mr-36">
-              <img src={trophy} alt="classement" className="w-10"></img>
+              <img src={trophy} alt="Leaderboard" className="w-10"></img>
             </div>
           </header>
           {/* Game area: on click */}
@@ -213,38 +269,75 @@ function App() {
                 key={target.id}
                 src={mosquito}
                 alt={target.id}
-                className="target non-selectable"
+                className="target non-selectable animate-jump-out animate-once animate-duration-[2000ms] animate-delay-[3000ms] animate-ease-out"
                 style={{ left: target.x, top: target.y }}
                 onClick={(event) => handleTargetClick(target.id, event)}
               />
             ))}
           </div>
+          {/* Game info */}
           <div className="game-info text-center">
             <div className="score">Score: {score}</div>
-            <div className="timer">Temps écoulé: {formatTime(time)}</div>
+            <div className="timer">Temps: {formatTime(time)}</div>
             <div className="missed-targets">
-              Missed Targets: {missedTargets}/{targetLimit}
+              Cibles manquées: {missedTargets}/{targetLimit}
             </div>
           </div>
         </div>
       )}
-      {/* When Game over */}
+      {/* Game over */}
       {gameOver && (
         <div className="flex flex-col">
-          <div className="flex flex-row justify-between">
+          <header className="flex flex-row justify-between">
             {/* Title */}
             <h1 className="title text-5xl text-center ml-[500px] mb-6 text-orange-700 animate-rotate-x">
               Mosquito Killer
             </h1>
             {/* Leaderboard */}
-            <div className="-mr-36">
+            <div className="-mr-36 relative z-20 font-futura" ref={leaderboardRef}>
               <img
                 src={trophy}
-                alt="classement"
-                className="w-12 cursor-pointer hover:opacity-85 hover:transition-opacity"
-              ></img>
+                alt="Leaderboard"
+                onClick={toggleDropdown}
+                className="w-14 -mt-2 cursor-pointer hover:opacity-85 hover:transition-opacity"
+              />
+              {isDropdownVisible && (
+                <div className="flex flex-col items-center absolute right-0 mt-0 w-[980px] h-auto pt-10 pb-2 bg-winner bg-cover bg-no-repeat rounded-2xl shadow-lg z-20 text-2xl animate-fade-down border-4 border-yellow-500">
+                  <h2 className="text-3xl -mt-7 mb-4 z-20 animate-pulse">Top 15</h2>
+                  <div className="absolute inset-0 bg-slate-50 bg-opacity-70 rounded-2xl"></div>
+                  <table className="z-10 w-full text-center">
+                    <thead>
+                      <tr>
+                        <th className="py-2 px-4">#</th>
+                        <th className="py-2 px-4">Nom</th>
+                        <th className="py-2 px-4">Score (Moustiques tués)</th>
+                        <th className="py-2 px-4">Temps</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                    {leaderboard.map((result, index) => (
+  <tr
+    key={result.username + index}
+    className={`${
+      newRecord && newRecord.username === result.username && newRecord.score === result.score && newRecord.time === result.time
+        ? 'bg-yellow-300 font-bold'
+        : ''
+    }`}
+  >
+    <td className={`py-2 px-4 ${index + 1 < 4 ? 'text-yellow-500 font-bold' : ''}`}>
+      {index + 1}
+    </td>
+    <td className="py-2 px-4">{result.username}</td>
+    <td className="py-2 px-4">{result.score}</td>
+    <td className="py-2 px-4">{formatTime(result.time)}</td>
+  </tr>
+))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </div>
-          </div>
+          </header>
           {/* Game area */}
           <div
             className="flex flex-row justify-center items-center bg-slate-50 w-[1400px] h-[700px] rounded-2xl bg-opacity-90 relative animate-fade animate-delay-[500ms] animate-duration-1000 animate-ease-in"
@@ -252,42 +345,42 @@ function App() {
           >
             <div className="flex flex-col items-center">
               {/* Game over title */}
-              <p className="font-bloodlust text-orange-700 text-9xl">
+              <h2 className="font-bloodlust text-orange-700 text-9xl mb-6">
                 GAME OVER
-              </p>
+              </h2>
               {/* Score (Number of mosquitoes killed) */}
-              <p className="text-2xl">
-                Vous avez tué <span className="text-red-500">{score}</span>{" "}
+              <p className="text-2xl font-futura">
+                Tu as tué <span className="text-red-500">{score}</span>{" "}
                 moustiques!
               </p>
               {/* Time */}
-              <p className="text-2xl">
+              <p className="text-2xl font-futura">
                 En <span className="text-red-500">{formatTime(time)}</span>
               </p>
               {/* Failed attempts */}
-              <p className="text-2xl">
-                Vous avez manqué votre cible{" "}
+              <p className="text-2xl font-futura">
+                Tu as raté ta cible{" "}
                 <span className="text-red-500">{missedTargets}</span> fois.
               </p>
-              {/* To register the username in the leaderboard */}
+              {/* Username form */}
               {displayForm && (
                 <form
                   onSubmit={handleSubmit}
-                  className="animate-jump-in animate-duration-[1000ms] animate-delay-[1000ms]"
+                  className="font-futura animate-jump-in animate-duration-[1000ms] animate-delay-[1000ms]"
                 >
-                  {/* Enter the username */}
+                  {/* Enter username */}
                   <input
                     type="text"
                     value={username}
                     onChange={handleUsernameChange}
-                    placeholder="Entre ton nom"
+                    placeholder="Enter your name"
                     className="h-12 w-60 mt-10 mr-2 border-2 text-center rounded-full border-red-500"
                   ></input>
-                  {/* Button to validate the username */}
+                  {/* Submit button */}
                   <button
                     type="submit"
-                    value="Valider"
-                    className="p-3 border-2 rounded-full bg-red-500 text-white hover:border-2 hover:border-red-500 hover:bg-slate-50 hover:text-red-500"
+                    value="Submit"
+                    className="font-futura p-3 border-2 rounded-full bg-red-500 text-white hover:border-2 hover:border-red-500 hover:bg-slate-50 hover:text-red-500"
                   >
                     OK
                   </button>
@@ -296,16 +389,16 @@ function App() {
               {/* Restart button */}
               <img
                 src={restart}
-                alt="Rejouer"
+                alt="Restart"
                 className="w-20 mt-10 animate-jump-in cursor-pointer hover:opacity-85 hover:transition-opacity"
                 onClick={handleRestart}
               />
             </div>
           </div>
-          {/* Game informations */}
-          <div className="game-info text-center">
+          {/* Game info */}
+          <div className="game-info text-center font-futura">
             <div className="score">Score: {score}</div>
-            <div className="timer">Temps écoulé: {formatTime(time)}</div>
+            <div className="timer">Elapsed Time: {formatTime(time)}</div>
             <div className="missed-targets">
               Missed Targets: {missedTargets}/{targetLimit}
             </div>

@@ -20,7 +20,7 @@ router.post("/", async (req, res) => {
 // Get the leaderboard
 router.get("/", async (req, res) => {
   try {
-    const results = await Result.find().sort({ score: -1 }).limit(10);
+    const results = await Result.find().sort({ score: -1, time: 1 }).limit(15);
     res.status(200).json(results);
   } catch (error) {
     res

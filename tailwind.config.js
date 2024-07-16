@@ -6,7 +6,11 @@ module.exports = {
     extend: {
       fontFamily: {
         bloodlust: ['bloodlust', 'sans-serif'],
-      }
+        futura: ['futurahandwritten'],
+      },
+      backgroundImage: {
+        'winner': "url('../src/images/winner.png')",
+      },
     },
   },
   plugins: [
